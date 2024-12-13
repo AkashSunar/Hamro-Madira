@@ -1,0 +1,167 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql" // Change this to match your database (e.g., "mysql" or "sqlite")
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(uuid())
+  name      String
+  email     String   @unique
+  password  String
+  phone     String?  // Optional
+  address   Json?    // Stores array of addresses
+  role      Role     @default(CUSTOMER)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  orders    Order[]
+  reviews   Review[]
+  cart      Cart[]
+}
+
+model Category {
+  id        String   @id @default(uuid())
+  name      String
+  description String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  products Product[]
+}
+
+model Product {
+  id            String   @id @unique @default(uuid())
+  name          String
+  description   String?
+  price         Decimal
+  stock         Int
+  alcoholContent Decimal
+  volume        Decimal
+  imageURL      String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  // Relations
+  categoryId String
+  category   Category @relation(fields: [categoryId], references: [id])
+  orderItems OrderItem[]
+  cartItem CartItem[]
+  reviews    Review[]
+}
+
+model Order {
+  id         String   @id @default(uuid())
+  totalPrice Decimal
+  status     OrderStatus @default(PENDING)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  // Relations
+  userId    String
+  user      User @relation(fields: [userId], references: [id])
+  items     OrderItem[]
+//   payment   Payment?
+}
+
+model OrderItem {
+  id         String   @id @default(uuid())
+  quantity   Int
+  price      Decimal
+
+  // Relations
+  orderId   String
+  order     Order @relation(fields: [orderId], references: [id])
+  productId String
+  product   Product @relation(fields: [productId], references: [id])
+}
+
+model Cart {
+  id         String   @id @default(uuid())
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  // Relations
+  userId    String
+  user      User @relation(fields: [userId], references: [id])
+  items     CartItem[]
+}
+
+model CartItem {
+  id         String   @id @default(uuid())
+  quantity   Int
+
+  // Relations
+  cartId    String
+  cart      Cart @relation(fields: [cartId], references: [id])
+  productId String
+  product   Product @relation(fields: [productId], references: [id])
+}
+
+model Review {
+  id        String   @id @default(uuid())
+  rating    Int
+  comment   String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  productId String
+  product   Product @relation(fields: [productId], references: [id])
+  userId    String
+  user      User @relation(fields: [userId], references: [id])
+}
+
+// model Payment {
+//   id              String   @id @default(uuid())
+//   paymentMethod   PaymentMethod
+//   status          PaymentStatus @default(PENDING)
+//   transactionId   String?
+//   createdAt       DateTime @default(now())
+
+//   // Relations
+//   orderId String
+//   order   Order @relation(fields: [orderId], references: [id])
+// }
+
+// model AuditLog {
+//   id        String   @id @default(uuid())
+//   action    String
+//   timestamp DateTime @default(now())
+//   details   Json?
+
+//   // Relations
+//   userId String
+//   user   User @relation(fields: [userId], references: [id])
+// }
+
+enum Role {
+  CUSTOMER
+  ADMIN
+}
+
+enum OrderStatus {
+  PENDING
+  PROCESSING
+  SHIPPED
+  DELIVERED
+  CANCELLED
+}
+
+enum PaymentMethod {
+  CREDIT_CARD
+  DEBIT_CARD
+  PAYPAL
+  CASH_ON_DELIVERY
+}
+
+enum PaymentStatus {
+  PENDING
+  COMPLETED
+  FAILED
+}
